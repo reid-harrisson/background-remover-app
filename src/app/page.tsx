@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import Image from "next/image";
+import { useTheme } from "next-themes";
 
 const colorTypes = ["rgb", "hex", "hsl", "cmyk"] as const;
 
@@ -15,6 +15,8 @@ export default function Home() {
     hsl: null,
     cmyk: null,
   });
+
+  const { setTheme } = useTheme();
 
   const handleImageChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -64,6 +66,10 @@ export default function Home() {
 
   return (
     <div className="flex flex-col items-center">
+      <select onChange={(e) => setTheme(e.target.value)}>
+        <option value="dark">dark</option>
+        <option value="light">light</option>
+      </select>
       <input
         type="file"
         id="file"
@@ -79,12 +85,10 @@ export default function Home() {
       </label>
       {selectedImage && (
         <div className="relative" onClick={handleImageClick}>
-          <Image
+          <img
             src={URL.createObjectURL(selectedImage)}
             alt={selectedImage.name}
-            width={200}
-            height={200}
-            className="max-h-[200px] object-cover pointer-events-none"
+            className="object-cover w-80 h-60 pointer-events-none"
           />
         </div>
       )}
