@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useTheme } from "next-themes";
+import Image from "next/image";
 
 const colorTypes = ["rgb", "hex", "hsl", "cmyk"] as const;
 
@@ -15,13 +16,30 @@ export default function Home() {
     hsl: null,
     cmyk: null,
   });
+  const [position, setPosition] = useState<{
+    x: number;
+    y: number;
+  }>({ x: 0, y: 0 });
+
+  const [size, setSize] = useState<{
+    width: number;
+    height: number;
+  }>({ width: 200, height: 200 });
 
   const { setTheme } = useTheme();
 
+  let width =
+    (200 * size.width) / size.height > 200
+      ? 200
+      : (200 * size.width) / size.height;
+  let height = (width * size.height) / size.width;
+  if (!width) width = 100;
+  if (!height) height = 100;
+
   const handleImageChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
+    const file = event.target.files ? event.target.files[0] : null; // Corrected here
     if (file) {
-      setSelectedImage(file);
+      setSelectedImage(file); // Move this line outside the if block
     } else {
       setSelectedImage(null);
     }
@@ -38,11 +56,13 @@ export default function Home() {
 
     canvas.width = imgElement.width;
     canvas.height = imgElement.height;
+
     context.drawImage(imgElement, 0, 0, imgElement.width, imgElement.height);
 
     const rect = imgElement.getBoundingClientRect();
     const x = event.clientX - rect.left;
     const y = event.clientY - rect.top;
+    setPosition({ x, y });
     const imgData = context.getImageData(x, y, 1, 1).data;
 
     const rgb = `rgb(${imgData[0]}, ${imgData[1]}, ${imgData[2]})`;
@@ -77,6 +97,7 @@ export default function Home() {
         onChange={handleImageChange}
         className="sr-only"
       />
+      <p>{selectedImage && selectedImage.name}</p>
       <label
         htmlFor="file"
         className="bg-foreground text-background px-4 py-2 rounded-xl cursor-pointer"
@@ -84,13 +105,39 @@ export default function Home() {
         Upload
       </label>
       {selectedImage && (
-        <div className="relative" onClick={handleImageClick}>
-          <img
-            src={URL.createObjectURL(selectedImage)}
-            alt={selectedImage.name}
-            className="object-cover w-80 h-60 pointer-events-none"
-          />
-        </div>
+        <>
+          <p>{`${size.width}x${size.height}`}</p>
+          <div className="flex w-[200px] h-[200px] items-center justify-center border-2 border-solid border-foreground rounded-lg">
+            <div className="relative" onClick={handleImageClick}>
+              <Image
+                onLoadingComplete={(img) => {
+                  if (
+                    size.width != img.naturalWidth ||
+                    size.height != img.naturalHeight
+                  )
+                    setSize({
+                      width: img.naturalWidth,
+                      height: img.naturalHeight,
+                    });
+                }}
+                src={URL.createObjectURL(selectedImage)}
+                alt={selectedImage.name}
+                className="object-fill pointer-events-none"
+                width={width}
+                height={height}
+              />
+              {color.rgb && (
+                <div
+                  className="w-[10px] h-[10px] absolute rounded-full z-10 bg-transparent backdrop-invert"
+                  style={{
+                    left: position.x - 5,
+                    top: position.y - 5,
+                  }}
+                ></div>
+              )}
+            </div>
+          </div>
+        </>
       )}
       {color.hex && (
         <div className="w-20 h-20" style={{ backgroundColor: color.hex }}></div>
